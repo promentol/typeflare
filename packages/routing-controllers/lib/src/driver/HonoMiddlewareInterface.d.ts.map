@@ -1,0 +1,1 @@
+{"version":3,"file":"HonoMiddlewareInterface.d.ts","sourceRoot":"","sources":["../../../src/driver/HonoMiddlewareInterface.ts"],"names":[],"mappings":"AAAA,OAAO,EAAE,OAAO,EAAE,MAAM,MAAM,CAAC;AAE/B;;;GAGG;AACH,MAAM,WAAW,uBAAuB;IACpC;;OAEG;IACH,GAAG,CAAC,OAAO,EAAE,OAAO,EAAE,IAAI,EAAE,CAAC,GAAG,CAAC,EAAE,GAAG,KAAK,OAAO,CAAC,GAAG,CAAC,GAAG,OAAO,CAAC,GAAG,CAAC,CAAC;CACxE"}
