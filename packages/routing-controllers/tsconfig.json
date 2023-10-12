@@ -20,7 +20,6 @@
       "noEmitOnError": false,
       "allowUnreachableCode": false,
       "types": [
-        "heft-jest",
         "@cloudflare/workers-types"
       ],
       "module": "commonjs",

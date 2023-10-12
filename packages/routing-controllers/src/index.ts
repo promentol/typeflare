@@ -2,7 +2,7 @@ import 'reflect-metadata';
 
 import { createServer, RoutingControllersOptions, JsonController, Get, Param } from 'routing-controllers'
 import { HonoDriver } from './driver/HonoDriver';
-import { serve } from '@hono/node-server'
+// import { serve } from '@hono/node-server'
 
 export function useHonoServer<T>(honoApp: T, options?: RoutingControllersOptions): T {
     const driver = new HonoDriver(honoApp);
