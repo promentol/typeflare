@@ -31,7 +31,7 @@ import {
   setSignedCookie,
   deleteCookie,
 } from "hono/cookie";
-// import templateUrl from 'template-url'
+
 /**
  * Integration with hono framework.
  */
