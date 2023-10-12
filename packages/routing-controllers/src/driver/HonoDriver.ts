@@ -1,20 +1,36 @@
-import { UseMetadata,  MiddlewareMetadata,ActionMetadata, ParamMetadata } from 'routing-controllers'
-import { Action, BaseDriver, RoleChecker, RoutingControllersOptions } from 'routing-controllers'
-import { HonoMiddlewareInterface, } from './HonoMiddlewareInterface';
+import {
+  UseMetadata,
+  MiddlewareMetadata,
+  ActionMetadata,
+  ParamMetadata,
+} from "routing-controllers";
+import {
+  Action,
+  BaseDriver,
+  RoleChecker,
+  RoutingControllersOptions,
+} from "routing-controllers";
+import { HonoMiddlewareInterface } from "./HonoMiddlewareInterface";
 
-import { AuthorizationRequiredError } from "routing-controllers"
+import { AuthorizationRequiredError } from "routing-controllers";
 
-import { AccessDeniedError } from "routing-controllers"
-import { AuthorizationCheckerNotDefinedError } from "routing-controllers"
-import { NotFoundError } from "routing-controllers"
+import { AccessDeniedError } from "routing-controllers";
+import { AuthorizationCheckerNotDefinedError } from "routing-controllers";
+import { NotFoundError } from "routing-controllers";
 
 // import { isPromiseLike } from '../../util/isPromiseLike';
-import { getFromContainer } from 'routing-controllers';
+import { getFromContainer } from "routing-controllers";
 // import { NotFoundError } from '../../index';
-import { Hono, Context } from 'hono'
-import { cors } from 'hono/cors'
+import { Hono, Context } from "hono";
+import { cors } from "hono/cors";
 
-import { getCookie, getSignedCookie, setCookie, setSignedCookie, deleteCookie } from 'hono/cookie'
+import {
+  getCookie,
+  getSignedCookie,
+  setCookie,
+  setSignedCookie,
+  deleteCookie,
+} from "hono/cookie";
 // import templateUrl from 'template-url'
 /**
  * Integration with hono framework.
@@ -38,7 +54,6 @@ export class HonoDriver extends BaseDriver {
    * Initializes the things driver needs before routes and middlewares registration.
    */
   initialize() {
-
     if (this.cors) {
       // eslint-disable-next-line @typescript-eslint/no-var-requires
       if (this.cors === true) {
@@ -64,7 +79,10 @@ export class HonoDriver extends BaseDriver {
   /**
    * Registers action in the driver.
    */
-  registerAction(actionMetadata: ActionMetadata, executeCallback: (options: Action) => any): void {
+  registerAction(
+    actionMetadata: ActionMetadata,
+    executeCallback: (options: Action) => any
+  ): void {
     // middlewares required for this action
     const defaultMiddlewares: any[] = [];
 
@@ -78,14 +96,26 @@ export class HonoDriver extends BaseDriver {
 
     if (actionMetadata.isAuthorizedUsed) {
       defaultMiddlewares.push((context: any, next: Function) => {
-        if (!this.authorizationChecker) throw new AuthorizationCheckerNotDefinedError();
+        if (!this.authorizationChecker)
+          throw new AuthorizationCheckerNotDefinedError();
 
-        const action: Action = { request: context.request, response: context.response, context, next };
+        const action: Action = {
+          request: context.request,
+          response: context.response,
+          context,
+          next,
+        };
         try {
           const checkResult =
             actionMetadata.authorizedRoles instanceof Function
-              ? getFromContainer<RoleChecker>(actionMetadata.authorizedRoles, action).check(action)
-              : this.authorizationChecker(action, actionMetadata.authorizedRoles);
+              ? getFromContainer<RoleChecker>(
+                  actionMetadata.authorizedRoles,
+                  action
+                ).check(action)
+              : this.authorizationChecker(
+                  action,
+                  actionMetadata.authorizedRoles
+                );
 
           const handleError = (result: any) => {
             if (!result) {
@@ -101,8 +131,10 @@ export class HonoDriver extends BaseDriver {
 
           if (isPromiseLike(checkResult)) {
             return checkResult
-              .then(result => handleError(result))
-              .catch(error => this.handleError(error, actionMetadata, action));
+              .then((result) => handleError(result))
+              .catch((error) =>
+                this.handleError(error, actionMetadata, action)
+              );
           } else {
             return handleError(checkResult);
           }
@@ -127,14 +159,28 @@ export class HonoDriver extends BaseDriver {
     // }
 
     // user used middlewares
-    const uses = actionMetadata.controllerMetadata.uses.concat(actionMetadata.uses);
-    const beforeMiddlewares = this.prepareMiddlewares(uses.filter(use => !use.afterAction));
-    const afterMiddlewares = this.prepareMiddlewares(uses.filter(use => use.afterAction));
+    const uses = actionMetadata.controllerMetadata.uses.concat(
+      actionMetadata.uses
+    );
+    const beforeMiddlewares = this.prepareMiddlewares(
+      uses.filter((use) => !use.afterAction)
+    );
+    const afterMiddlewares = this.prepareMiddlewares(
+      uses.filter((use) => use.afterAction)
+    );
 
     // prepare route and route handler function
-    const route = ActionMetadata.appendBaseRoute(this.routePrefix, actionMetadata.fullRoute);
+    const route = ActionMetadata.appendBaseRoute(
+      this.routePrefix,
+      actionMetadata.fullRoute
+    );
     const routeHandler = (context: any, next: () => Promise<any>) => {
-      const options: Action = { request: context.req, response: context.res, context, next };
+      const options: Action = {
+        request: context.req,
+        response: context.res,
+        context,
+        next,
+      };
       return executeCallback(options);
     };
 
@@ -143,24 +189,24 @@ export class HonoDriver extends BaseDriver {
     // be called.
     // The following middleware only starts an action processing if the request has not been processed before.
     const routeGuard = async (context: any, next: () => Promise<any>) => {
-      if (!context.get('routingControllersStarted')) {
-        context.set('routingControllersStarted', true);
+      if (!context.get("routingControllersStarted")) {
+        context.set("routingControllersStarted", true);
         await next();
       }
     };
 
-    this.hono[actionMetadata.type.toLowerCase()](route, routeGuard)
+    this.hono[actionMetadata.type.toLowerCase()](route, routeGuard);
     beforeMiddlewares.forEach((x) => {
-      this.hono[actionMetadata.type.toLowerCase()](route, x)
-    })
+      this.hono[actionMetadata.type.toLowerCase()](route, x);
+    });
     defaultMiddlewares.forEach((x) => {
-      this.hono[actionMetadata.type.toLowerCase()](route, x)
-    })
-    this.hono[actionMetadata.type.toLowerCase()](route, routeHandler)
+      this.hono[actionMetadata.type.toLowerCase()](route, x);
+    });
+    this.hono[actionMetadata.type.toLowerCase()](route, routeHandler);
 
     afterMiddlewares.forEach((x) => {
-      this.hono[actionMetadata.type.toLowerCase()](route, x)
-    })
+      this.hono[actionMetadata.type.toLowerCase()](route, x);
+    });
   }
 
   /**
@@ -176,51 +222,53 @@ export class HonoDriver extends BaseDriver {
     const request: any = action.request;
     const context: any = action.context;
     switch (param.type) {
-      case 'body':
+      case "body":
         return request.body;
 
-      case 'body-param':
+      case "body-param":
         return request.body[param.name];
 
-      case 'param':
+      case "param":
         return request.param(param.name);
 
-      case 'params':
+      case "params":
         return request.param();
 
-      case 'session-param':
+      case "session-param":
         return request.session[param.name];
 
-      case 'session':
+      case "session":
         return request.session;
 
-      case 'state':
-        throw new Error('@State decorators are not supported by express driver.');
+      case "state":
+        throw new Error(
+          "@State decorators are not supported by express driver."
+        );
 
-      case 'query':
+      case "query":
         return request.query(param.name);
 
-      case 'queries':
+      case "queries":
         return request.query();
 
-      case 'header':
+      case "header":
         return request.headers[param.name.toLowerCase()];
 
-      case 'headers':
+      case "headers":
         return request.headers;
 
-      case 'file':
+      case "file":
         return request.file;
 
-      case 'files':
+      case "files":
         return request.files;
 
-      case 'cookie':
-        return getCookie(context, param.name)
+      case "cookie":
+        return getCookie(context, param.name);
 
-      case 'cookies':
+      case "cookies":
         // if (!request.headers.cookie) return {};
-        return getCookie(context)
+        return getCookie(context);
     }
   }
 
@@ -228,13 +276,11 @@ export class HonoDriver extends BaseDriver {
    * Handles result of successfully executed controller action.
    */
   handleSuccess(result: any, action: ActionMetadata, options: Action): void {
-
     // if the action returned the response object itself, short-circuits
     // if (result && result === options.response) {
     //   options?.next?.();
     //   return;
     // }
-
 
     // transform result if needed
     result = this.transformResult(result, action, options);
@@ -259,33 +305,33 @@ export class HonoDriver extends BaseDriver {
     }
 
     // apply http headers
-    Object.keys(action.headers).forEach(name => {
+    Object.keys(action.headers).forEach((name) => {
       options.context.header(name, action.headers[name]);
     });
 
     if (action.redirect) {
       // if redirect is set then do it
-      if (typeof result === 'string') {
+      if (typeof result === "string") {
         return options.context.redirect(result);
       } else if (result instanceof Object) {
         // options.response.redirect(templateUrl(action.redirect, result));
       } else {
         return options.context.redirect(action.redirect);
       }
-    // } else if (action.renderedTemplate) {
-    //   // if template is set then render it
-    //   const renderOptions = result && result instanceof Object ? result : {};
+      // } else if (action.renderedTemplate) {
+      //   // if template is set then render it
+      //   const renderOptions = result && result instanceof Object ? result : {};
 
-    //   return options.context.render(action.renderedTemplate, renderOptions, (err: any, html: string) => {
-    //     if (err && action.isJsonTyped) {
-    //       return options.next?.(err);
-    //     } else if (err && !action.isJsonTyped) {
-    //       return options.next?.(err);
-    //     } else if (html) {
-    //       options.context.send(html);
-    //     }
-    //     options.next?.();
-    //   });
+      //   return options.context.render(action.renderedTemplate, renderOptions, (err: any, html: string) => {
+      //     if (err && action.isJsonTyped) {
+      //       return options.next?.(err);
+      //     } else if (err && !action.isJsonTyped) {
+      //       return options.next?.(err);
+      //     } else if (html) {
+      //       options.context.send(html);
+      //     }
+      //     options.next?.();
+      //   });
     } else if (result === undefined) {
       // throw NotFoundError on undefined response
 
@@ -305,12 +351,12 @@ export class HonoDriver extends BaseDriver {
       } else {
         return options.context.send(null);
       }
-    // } else if (result instanceof Buffer) {
-    //   // check if it's binary data (Buffer)
-    //   options.response.end(result, 'binary');
-    // } else if (result instanceof Uint8Array) {
-    //   // check if it's binary data (typed array)
-    //   options.response.end(Buffer.from(result as any), 'binary');
+      // } else if (result instanceof Buffer) {
+      //   // check if it's binary data (Buffer)
+      //   options.response.end(result, 'binary');
+      // } else if (result instanceof Uint8Array) {
+      //   // check if it's binary data (typed array)
+      //   options.response.end(Buffer.from(result as any), 'binary');
     } else if (result.pipe instanceof Function) {
       // result.pipe(options.context);
     } else {
@@ -322,14 +368,17 @@ export class HonoDriver extends BaseDriver {
       }
     }
 
-    return options.context.text('anasun2')
-
+    return options.context.text("anasun2");
   }
 
   /**
    * Handles result of failed executed controller action.
    */
-  handleError(error: any, action: ActionMetadata | undefined, options: Action): any {
+  handleError(
+    error: any,
+    action: ActionMetadata | undefined,
+    options: Action
+  ): any {
     if (this.isDefaultErrorHandlingEnabled) {
       const response: any = options.response;
       const context: any = options.context;
@@ -344,7 +393,7 @@ export class HonoDriver extends BaseDriver {
 
       // apply http headers
       if (action) {
-        Object.keys(action.headers).forEach(name => {
+        Object.keys(action.headers).forEach((name) => {
           context.header(name, action.headers[name]);
         });
       }
@@ -368,21 +417,25 @@ export class HonoDriver extends BaseDriver {
    */
   protected prepareMiddlewares(uses: UseMetadata[]) {
     const middlewareFunctions: Function[] = [];
-    uses.forEach(use => {
+    uses.forEach((use) => {
       if (use.middleware.prototype && use.middleware.prototype.use) {
         // if this is function instance of MiddlewareInterface
-        middlewareFunctions.push(async (context: any, next: (err?: any) => Promise<any>) => {
-          try {
-            return await getFromContainer<HonoMiddlewareInterface>(use.middleware).use(context, next);
-          } catch (error) {
-            return await this.handleError(error, undefined, {
-              request: context.req,
-              response: context,
-              context,
-              next,
-            });
+        middlewareFunctions.push(
+          async (context: any, next: (err?: any) => Promise<any>) => {
+            try {
+              return await getFromContainer<HonoMiddlewareInterface>(
+                use.middleware
+              ).use(context, next);
+            } catch (error) {
+              return await this.handleError(error, undefined, {
+                request: context.req,
+                response: context,
+                context,
+                next,
+              });
+            }
           }
-        });
+        );
       } else {
         middlewareFunctions.push(use.middleware);
       }
@@ -393,16 +446,18 @@ export class HonoDriver extends BaseDriver {
    * Dynamically loads express module.
    */
   protected loadHono() {
-    // eslint-disable-next-line 
+    // eslint-disable-next-line
     // if (require) {
-      if (!this.hono) {
-        try {
-          // eslint-disable-next-line @typescript-eslint/no-var-requires
-          this.hono = new Hono()
-        } catch (e) {
-          throw new Error('hono package was not found installed. Try to install it: npm install hono --save');
-        }
+    if (!this.hono) {
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-var-requires
+        this.hono = new Hono();
+      } catch (e) {
+        throw new Error(
+          "hono package was not found installed. Try to install it: npm install hono --save"
+        );
       }
+    }
     // } else {
     //   throw new Error('Cannot load hono. Try to install all required dependencies.');
     // }
@@ -411,27 +466,28 @@ export class HonoDriver extends BaseDriver {
   /**
    * Dynamically loads body-parser module.
    */
-//   protected loadBodyParser() {
-//     try {
-//       return require('body-parser');
-//     } catch (e) {
-//       throw new Error('body-parser package was not found installed. Try to install it: npm install body-parser --save');
-//     }
-//   }
+  //   protected loadBodyParser() {
+  //     try {
+  //       return require('body-parser');
+  //     } catch (e) {
+  //       throw new Error('body-parser package was not found installed. Try to install it: npm install body-parser --save');
+  //     }
+  //   }
 
   /**
    * Dynamically loads multer module.
    */
-//   protected loadMulter() {
-//     try {
-//       return require('multer');
-//     } catch (e) {
-//       throw new Error('multer package was not found installed. Try to install it: npm install multer --save');
-//     }
-//   }
+  //   protected loadMulter() {
+  //     try {
+  //       return require('multer');
+  //     } catch (e) {
+  //       throw new Error('multer package was not found installed. Try to install it: npm install multer --save');
+  //     }
+  //   }
 }
 
-
 function isPromiseLike(arg: any): arg is Promise<any> {
-  return arg != null && typeof arg === 'object' && typeof arg.then === 'function';
+  return (
+    arg != null && typeof arg === "object" && typeof arg.then === "function"
+  );
 }

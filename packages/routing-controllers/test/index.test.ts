@@ -1,27 +1,35 @@
-import 'reflect-metadata';
+import "reflect-metadata";
 
-import { JsonController, Param, Body, Get, Redirect } from 'routing-controllers';
+import {
+  JsonController,
+  Param,
+  Body,
+  Get,
+  Redirect,
+} from "routing-controllers";
 
-import { createExpressServer, getMetadataArgsStorage } from 'routing-controllers';
-import {Hono} from 'hono';
+import {
+  createExpressServer,
+  getMetadataArgsStorage,
+} from "routing-controllers";
+import { Hono } from "hono";
 import DoneCallback = jest.DoneCallback;
-import axios from './utilities/axios';
-import HttpStatusCodes from 'http-status-codes'
-import { createHonoServer } from '../src/index';
-import { serve } from '@hono/node-server'
-
+import axios from "./utilities/axios";
+import HttpStatusCodes from "http-status-codes";
+import { createHonoServer } from "../src/index";
+import { serve } from "@hono/node-server";
 
 describe(`last`, () => {
   let honoServer: Hono;
 
-  describe('dynamic redirect', function () {
+  describe("dynamic redirect", function () {
     beforeAll((done: DoneCallback) => {
       getMetadataArgsStorage().reset();
 
-      @JsonController('/users')
+      @JsonController("/users")
       class TestController {
-        @Get('/:id')
-        getOne(@Param('id') id: string): any {
+        @Get("/:id")
+        getOne(@Param("id") id: string): any {
           return {
             login: id,
           };
@@ -30,45 +38,50 @@ describe(`last`, () => {
 
       @JsonController()
       class RedirectController {
-        @Get('/template')
-        @Redirect('/users/:owner')
+        @Get("/template")
+        @Redirect("/users/:owner")
         template(): any {
-          return { owner: 'pleerock', repo: 'routing-controllers' };
+          return { owner: "pleerock", repo: "routing-controllers" };
         }
 
-        @Get('/original')
-        @Redirect('/users/pleerock')
+        @Get("/original")
+        @Redirect("/users/pleerock")
         original(): void {
           // Empty
         }
 
-        @Get('/override')
-        @Redirect('https://api.github.com')
+        @Get("/override")
+        @Redirect("https://api.github.com")
         override(): string {
-          return '/users/pleerock';
+          return "/users/pleerock";
         }
       }
 
-      honoServer = createHonoServer()
+      honoServer = createHonoServer();
 
-      console.log(serve({
-        fetch: honoServer.fetch,
-        port: 3001,
-      }, (x) => {
-        console.log(x)
-        done()
-      }))
+      console.log(
+        serve(
+          {
+            fetch: honoServer.fetch,
+            port: 3001,
+          },
+          (x) => {
+            console.log(x);
+            done();
+          }
+        )
+      );
     });
 
     afterAll((done: DoneCallback) => {
       // honoServer.close()
     });
 
-    it('using template', async () => {
+    it("using template", async () => {
       expect.assertions(2);
-      const response = await axios.get('/template');
+      const response = await axios.get("/template");
       expect(response.status).toEqual(HttpStatusCodes.OK);
-      expect(response.data.login).toEqual('pleerock');
+      expect(response.data.login).toEqual("pleerock");
     });
 
     // it('using override', async () => {
